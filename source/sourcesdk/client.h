@@ -30,8 +30,6 @@
 #include "baseclientstate.h"
 #include "clientframe.h"
 
-
-
 struct model_t;
 struct SoundInfo_t;
 
@@ -46,7 +44,6 @@ struct AddAngle
 	float total;
 	float starttime;
 };
-
 
 //-----------------------------------------------------------------------------
 // Purpose: CClientState should hold all pieces of the client state
@@ -261,7 +258,7 @@ private:
 
 	void ProcessSoundsWithProtoVersion( SVC_Sounds *msg, CUtlVector< SoundInfo_t > &sounds, int nProtoVersion );
 
-private:
+public:
 	
 	// Note: This is only here for backwards compatibility. If it is set to something other than NULL,
 	// then we'll copy its contents into m_chAreaBits in UpdateAreaBits_BackwardsCompatible.

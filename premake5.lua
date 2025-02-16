@@ -33,3 +33,12 @@ CreateWorkspace({name = "loadingscreen", abi_compatible = false})
 		--IncludeSteamAPI()
 		IncludeDetouring()
 		IncludeScanning()
+
+		files({
+			[[source/sourcesdk/*.h]],
+			[[source/sourcesdk/*.cpp]],
+		})
+
+		includedirs({
+			[[source/sourcesdk/]],
+		})

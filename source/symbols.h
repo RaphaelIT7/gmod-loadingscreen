@@ -23,4 +23,7 @@ namespace Symbols
 {
 	typedef void (GMCOMMON_CALLING_CONVENTION *CClientState_FinishSignonState_New)(void* cclientState);
 	extern const std::vector<Symbol> CClientState_FinishSignonState_NewSym;
+
+	typedef void (GMCOMMON_CALLING_CONVENTION *CL_InstallAndInvokeClientStringTableCallbacks)();
+	extern const std::vector<Symbol> CL_InstallAndInvokeClientStringTableCallbacksSym;
 }
