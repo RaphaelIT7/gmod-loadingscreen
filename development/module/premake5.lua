@@ -3,33 +3,37 @@
 PROJECT_GENERATOR_VERSION = 3
 
 newoption({
-    trigger = "gmcommon",
-    description = "Sets the path to the garrysmod_common (https://github.com/danielga/garrysmod_common) directory",
+	trigger = "gmcommon",
+	description = "Sets the path to the garrysmod_common (https://github.com/danielga/garrysmod_common) directory",
 	default = "../../../fork-garrysmod_common"
 })
 
 local gmcommon = assert(_OPTIONS.gmcommon or os.getenv("GARRYSMOD_COMMON"),
-    "you didn't provide a path to your garrysmod_common (https://github.com/danielga/garrysmod_common) directory")
+	"you didn't provide a path to your garrysmod_common (https://github.com/danielga/garrysmod_common) directory")
 include(gmcommon)
 
 CreateWorkspace({name = "loadingscreen", abi_compatible = false})
-    -- Serverside module (gmsv prefix)
-    -- Can define "source_path", where the source files are located
-    -- Can define "manual_files", which allows you to manually add files to the project,
-    -- instead of automatically including them from the "source_path"
-    -- Can also define "abi_compatible", for project specific compatibility
-    CreateProject({serverside = true, source_path = "../../source", manual_files = false})
-        -- Remove some or all of these includes if they're not needed
-        IncludeHelpersExtended()
-        --IncludeLuaShared()
-        IncludeSDKCommon()
-        IncludeSDKTier0()
-        IncludeSDKTier1()
-        --IncludeSDKTier3()
-        --IncludeSDKMathlib()
-        --IncludeSDKRaytrace()
-        --IncludeSDKBitmap()
-        --IncludeSDKVTF()
-        --IncludeSteamAPI()
-        IncludeDetouring()
-        IncludeScanning()
+	-- Serverside module (gmsv prefix)
+	-- Can define "source_path", where the source files are located
+	-- Can define "manual_files", which allows you to manually add files to the project,
+	-- instead of automatically including them from the "source_path"
+	-- Can also define "abi_compatible", for project specific compatibility
+	CreateProject({serverside = true, source_path = "../../source", manual_files = false})
+		-- Remove some or all of these includes if they're not needed
+		IncludeHelpersExtended()
+		--IncludeLuaShared()
+		IncludeSDKCommon()
+		IncludeSDKTier0()
+		IncludeSDKTier1()
+		--IncludeSDKTier3()
+		--IncludeSDKMathlib()
+		--IncludeSDKRaytrace()
+		--IncludeSDKBitmap()
+		--IncludeSDKVTF()
+		--IncludeSteamAPI()
+		IncludeDetouring()
+		IncludeScanning()
+
+		files({
+			"../../README.md"
+		})
