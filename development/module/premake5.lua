@@ -35,5 +35,15 @@ CreateWorkspace({name = "loadingscreen", abi_compatible = false})
 		IncludeScanning()
 
 		files({
-			"../../README.md"
+			[[../../README.md]],
+			[[../../source/sourcesdk/*.h]],
+			[[../../source/sourcesdk/*.cpp]],
+		})
+
+		includedirs({
+			[[../../source/sourcesdk/]],
+		})
+
+		postbuildcommands({
+			[[{COPYFILE} %{cfg.targetdir}/gmsv_loadingscreen_win32.dll "C:\Program Files (x86)\Steam\steamapps\common\GarrysMod\garrysmod\lua\bin"]]
 		})

@@ -74,15 +74,15 @@ namespace Detour
 
 #ifdef SYSTEM_LINUX
 #if ARCHITECTURE_IS_X86
-#define DETOUR_SYMBOL_ID 0
-#else
-#define DETOUR_SYMBOL_ID 1
-#endif
-#else
-#if ARCHITECTURE_IS_X86
 #define DETOUR_SYMBOL_ID 2
 #else
 #define DETOUR_SYMBOL_ID 3
+#endif
+#else
+#if ARCHITECTURE_IS_X86
+#define DETOUR_SYMBOL_ID 0
+#else
+#define DETOUR_SYMBOL_ID 1
 #endif
 #endif
 
@@ -118,7 +118,7 @@ namespace Detour
 		return GetFunction(module, symbols[DETOUR_SYMBOL_ID]);
 	}
 
-	inline void Create(Detouring::Hook* hook, const char* name, void* module, std::vector<Symbol> symbols, void* func, unsigned int category)
+	inline void Create(Detouring::Hook* hook, const char* name, void* module, std::vector<Symbol> symbols, void* func, unsigned int category = 0)
 	{
 #if DETOUR_SYMBOL_ID != 0
 		if ((symbols.size()-1) < DETOUR_SYMBOL_ID)
