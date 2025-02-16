@@ -195,7 +195,6 @@ public:
 
 	int			m_nDeltaTick;		//	last valid received snapshot (server) tick
 	bool		m_bPaused;			// send over by server
-	float		m_flPausedExpireTime;
 	int			m_nViewEntity;		// cl_entitites[cl.viewentity] == player point of view
 
 	int			m_nPlayerSlot;		// own player entity index-1. skips world. Add 1 to get cl_entitites index;

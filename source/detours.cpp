@@ -14,6 +14,7 @@ void* Detour::GetFunction(void* module, Symbol symbol)
 	return symfinder.Resolve(module, symbol.name.c_str(), symbol.length);
 }
 
+bool Detour::g_bDetourError = false;
 std::unordered_set<std::string> pDisabledDetours;
 std::map<unsigned int, std::vector<Detouring::Hook*>> g_pDetours = {};
 void Detour::Create(Detouring::Hook* hook, const char* name, void* module, Symbol symbol, void* hook_func, unsigned int category)

@@ -30,7 +30,7 @@ CreateWorkspace({name = "loadingscreen", abi_compatible = false})
 		--IncludeSDKRaytrace()
 		--IncludeSDKBitmap()
 		--IncludeSDKVTF()
-		--IncludeSteamAPI()
+		IncludeSteamAPI()
 		IncludeDetouring()
 		IncludeScanning()
 

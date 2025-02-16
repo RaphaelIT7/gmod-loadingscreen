@@ -153,8 +153,8 @@ public:
 
 	virtual void		Client_OnServerModelStateChanged( model_t *pModel, bool bServerLoaded ) = 0;
 	
-	virtual void		GMOD_LoadModel(char const*);
-	virtual void		GMOD_ReloadModels(bool);
+	virtual void		GMOD_LoadModel( char const* ) = 0;
+	virtual void		GMOD_ReloadModels( bool ) = 0;
 };
 
 extern IModelLoader *modelloader;

@@ -13,6 +13,7 @@
 //---------------------------------------------------------------------------------
 namespace Detour
 {
+	extern bool g_bDetourError;
 #define DETOUR_ISVALID( detour ) detour .IsValid()
 
 #define DETOUR_ISENABLED( detour ) detour .IsEnabled()
@@ -29,6 +30,7 @@ namespace Detour
 	{
 		if (!ret) {
 			Msg("loadingscreen: Failed to %s %s!\n", msg, name);
+			g_bDetourError = true;
 			return false;
 		}
 

@@ -182,7 +182,6 @@ public:
 	
 	
 	bool				IsPaused() const;
-	float				GetPausedExpireTime() const { return m_flPausedExpireTime; }
 
 	float				GetFrameTime( void ) const;
 	void				SetFrameTime( float dt ) { m_frameTime = dt; }
@@ -235,6 +234,7 @@ public:
 	INetworkStringTable *m_pUserInfoTable;
 	INetworkStringTable *m_pServerStartupTable;
 	INetworkStringTable *m_pDownloadableFileTable;
+	INetworkStringTable *m_pDynamicModelsTable;
 	
 	CPrecacheItem		model_precache[ MAX_MODELS ];
 	CPrecacheItem		generic_precache[ MAX_GENERIC ];
