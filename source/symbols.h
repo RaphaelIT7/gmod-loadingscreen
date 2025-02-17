@@ -60,4 +60,7 @@ namespace Symbols
 
 	typedef void (*V_RenderVGuiOnly)();
 	extern const std::vector<Symbol> V_RenderVGuiOnlySym;
+
+	typedef void (*ClientDLL_ProcessInput)();
+	extern const std::vector<Symbol> ClientDLL_ProcessInputSym;
 }

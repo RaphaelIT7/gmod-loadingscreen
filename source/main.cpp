@@ -1,4 +1,5 @@
-﻿#include <GarrysMod/InterfacePointers.hpp>
+﻿#include "GarrysMod/IMenuSystem.h"
+#include <GarrysMod/InterfacePointers.hpp>
 #include <GarrysMod/Lua/Interface.h>
 #include "detours.h"
 #include "symbols.h"
@@ -21,6 +22,7 @@ IEngineVGuiInternal* enginevgui_internal;
 IModelLoader* modelloader;
 IVEngineClient* engineclient;
 IMDLCache* mdlcache;
+static IMenuSystem* g_pMenuSystem;
 
 inline IEngineVGuiInternal* EngineVGui()
 {
@@ -106,6 +108,27 @@ static void WaitForVGUIRender()
 		ThreadSleep(0);
 }
 
+/*
+ * Renders the loading screen & processes all inputs later
+ */
+static Symbols::V_RenderVGuiOnly func_V_RenderVGuiOnly;
+static Symbols::ClientDLL_ProcessInput func_ClientDLL_ProcessInput;
+inline void RunVGUIFrame()
+{
+	if (ThreadInMainThread())
+	{
+		g_pMenuSystem->Think();
+		func_V_RenderVGuiOnly();
+	} else {
+		WaitForVGUIRender();
+	}
+}
+
+inline bool ShouldCancelLoading()
+{
+	return g_pClientState->m_nSignonState == SIGNONSTATE_NONE;
+}
+
 static Detouring::Hook detour_CL_InstallAndInvokeClientStringTableCallbacks;
 static void hook_CL_InstallAndInvokeClientStringTableCallbacks()
 {
@@ -144,7 +167,10 @@ static void hook_CL_InstallAndInvokeClientStringTableCallbacks()
 			const void *pUserData = pTable->GetStringUserData( j, &userDataSize );
 
 			(*pNewFunction)( NULL, pTable, j, pTable->GetString( j ), pUserData );
-			WaitForVGUIRender();
+
+			RunVGUIFrame();
+			if (ShouldCancelLoading())
+				return;
 		}
 	}
 }
@@ -158,19 +184,30 @@ static void Threaded_ClientLoading()
 {
 	hook_CL_InstallAndInvokeClientStringTableCallbacks();
 
+	if (ShouldCancelLoading())
+		return;
+
 	materials->CacheUsedMaterials();
-	WaitForVGUIRender();
+	RunVGUIFrame();
+
+	if (ShouldCancelLoading())
+		return;
 
 	func_CClientState_ConsistencyCheck(g_pClientState, true);
-	WaitForVGUIRender();
+	RunVGUIFrame();
+
+	if (ShouldCancelLoading())
+		return;
 
 	func_CL_RegisterResources();
-	WaitForVGUIRender();
+	RunVGUIFrame();
+
+	if (ShouldCancelLoading())
+		return;
 
 	g_bIsFinishedLoading = true;
 }
 
-static Symbols::V_RenderVGuiOnly func_V_RenderVGuiOnly;
 static void WaitForFinish()
 {
 	while (true)
@@ -181,7 +218,7 @@ static void WaitForFinish()
 		while(!g_bWaitingForRender && !g_bIsFinishedLoading)
 			ThreadSleep(0);
 
-		func_V_RenderVGuiOnly();
+		RunVGUIFrame();
 		g_bWaitingForRender = false;
 	}
 
@@ -235,9 +272,14 @@ static void hook_CClientState_FinishSignonState_New()
 
 	func_CL_CheckForPureServerWhitelist( g_pClientState->m_pPendingPureFileReloads );
 
-	g_pMainThreads->QueueCall(Threaded_ClientLoading);
+	//g_pMainThreads->QueueCall(Threaded_ClientLoading);
 
-	WaitForFinish();
+	//WaitForFinish();
+
+	Threaded_ClientLoading();
+
+	if (ShouldCancelLoading())
+		return;
 
 	func_R_LevelInit(); // Can't move this since else we crash randomly
 
@@ -344,6 +386,9 @@ GMOD_MODULE_OPEN()
 	func_V_RenderVGuiOnly = (Symbols::V_RenderVGuiOnly)Detour::GetFunction(engine_loader.GetModule(), Symbols::V_RenderVGuiOnlySym);
 	Detour::CheckFunction((void*)func_V_RenderVGuiOnly, "V_RenderVGuiOnly");
 
+	func_ClientDLL_ProcessInput = (Symbols::ClientDLL_ProcessInput)Detour::GetFunction(engine_loader.GetModule(), Symbols::ClientDLL_ProcessInputSym);
+	Detour::CheckFunction((void*)func_ClientDLL_ProcessInput, "ClientDLL_ProcessInput");
+
 	enginevgui_internal = engine_loader.GetInterface<IEngineVGuiInternal>(VENGINE_VGUI_VERSION);
 	Detour::CheckValue("get IEngineVGuiInternal", enginevgui_internal);
 
@@ -354,6 +399,10 @@ GMOD_MODULE_OPEN()
 	SourceSDK::FactoryLoader datacache_loader("datacache");
 	mdlcache = datacache_loader.GetInterface<IMDLCache>(MDLCACHE_INTERFACE_VERSION);
 	Detour::CheckValue("get IMDLCache", mdlcache);
+
+	SourceSDK::FactoryLoader menusystem_loader("menusystem");
+	g_pMenuSystem = menusystem_loader.GetInterface<IMenuSystem>(INTERFACEVERSION_MENUSYSTEM);
+	Detour::CheckValue("get IMenuSystem", g_pMenuSystem);
 
 	if (func_SendTable_ComputeCRC)
 		g_pSendTableCRC = func_SendTable_ComputeCRC();
