@@ -129,6 +129,28 @@ inline bool ShouldCancelLoading()
 	return g_pClientState->m_nSignonState == SIGNONSTATE_NONE;
 }
 
+struct StringTableCallback {
+	pfnStringChanged callbackFunc;
+	void *object;
+	INetworkStringTable *stringTable;
+	int stringNumber;
+	char const *newString;
+	void const *newData;
+	const char* tableName;
+};
+
+static void Threaded_StringTableCallback(StringTableCallback*& data)
+{
+	if (ShouldCancelLoading())
+		return;
+
+	data->callbackFunc(data->object, data->stringTable, data->stringNumber, data->newString, data->newData);
+
+	RunVGUIFrame();
+
+	delete data;
+}
+
 static Detouring::Hook detour_CL_InstallAndInvokeClientStringTableCallbacks;
 static void hook_CL_InstallAndInvokeClientStringTableCallbacks()
 {
@@ -161,17 +183,34 @@ static void hook_CL_InstallAndInvokeClientStringTableCallbacks()
 		if ( pNewFunction == pOldFunction )
 			continue;
 
+		//bool bModelPrecache = V_stricmp(pTableName, "modelprecache") == 0;
+		CUtlVector<StringTableCallback*> entries;
 		for ( int j = 0; j < pTable->GetNumStrings(); ++j )
 		{
 			int userDataSize;
 			const void *pUserData = pTable->GetStringUserData( j, &userDataSize );
 
-			(*pNewFunction)( NULL, pTable, j, pTable->GetString( j ), pUserData );
+			std::string_view strFile = pTable->GetString(j);
+			bool bIsModel = strFile.find(".mdl") != std::string_view::npos;
 
-			RunVGUIFrame();
-			if (ShouldCancelLoading())
-				return;
+			if (bIsModel)
+			{
+				StringTableCallback* data = new StringTableCallback;
+				data->callbackFunc = pNewFunction;
+				data->object = NULL;
+				data->stringTable = pTable;
+				data->stringNumber = j;
+				data->newString = pTable->GetString( j );
+				data->newData = pUserData;
+				data->tableName = pTableName;
+
+				entries.AddToTail(data);
+			} else {
+				(*pNewFunction)( NULL, pTable, j, pTable->GetString( j ), pUserData );
+			}
 		}
+
+		ParallelProcess("Threaded_StringTableCallback", entries.Base(), entries.Count(), Threaded_StringTableCallback);
 	}
 }
 
@@ -272,11 +311,12 @@ static void hook_CClientState_FinishSignonState_New()
 
 	func_CL_CheckForPureServerWhitelist( g_pClientState->m_pPendingPureFileReloads );
 
-	//g_pMainThreads->QueueCall(Threaded_ClientLoading);
-
-	//WaitForFinish();
-
-	Threaded_ClientLoading();
+	if (true) // true = threaded
+	{
+		g_pMainThreads->QueueCall(Threaded_ClientLoading);
+		WaitForFinish();
+	} else
+		Threaded_ClientLoading();
 
 	if (ShouldCancelLoading())
 		return;
@@ -324,7 +364,7 @@ GMOD_MODULE_OPEN()
 	// We won't even use lua :p
 
 	ThreadPoolStartParams_t startParams;
-	startParams.nThreads = 1;
+	startParams.nThreads = 4;
 	startParams.nThreadsMax = startParams.nThreads;
 
 	g_pWorkerThreads = V_CreateThreadPool();
