@@ -129,28 +129,6 @@ inline bool ShouldCancelLoading()
 	return g_pClientState->m_nSignonState == SIGNONSTATE_NONE;
 }
 
-struct StringTableCallback {
-	pfnStringChanged callbackFunc;
-	void *object;
-	INetworkStringTable *stringTable;
-	int stringNumber;
-	char const *newString;
-	void const *newData;
-	const char* tableName;
-};
-
-static void Threaded_StringTableCallback(StringTableCallback*& data)
-{
-	if (ShouldCancelLoading())
-		return;
-
-	data->callbackFunc(data->object, data->stringTable, data->stringNumber, data->newString, data->newData);
-
-	RunVGUIFrame();
-
-	delete data;
-}
-
 static Detouring::Hook detour_CL_InstallAndInvokeClientStringTableCallbacks;
 static void hook_CL_InstallAndInvokeClientStringTableCallbacks()
 {
@@ -183,34 +161,17 @@ static void hook_CL_InstallAndInvokeClientStringTableCallbacks()
 		if ( pNewFunction == pOldFunction )
 			continue;
 
-		//bool bModelPrecache = V_stricmp(pTableName, "modelprecache") == 0;
-		CUtlVector<StringTableCallback*> entries;
 		for ( int j = 0; j < pTable->GetNumStrings(); ++j )
 		{
 			int userDataSize;
 			const void *pUserData = pTable->GetStringUserData( j, &userDataSize );
 
-			std::string_view strFile = pTable->GetString(j);
-			bool bIsModel = strFile.find(".mdl") != std::string_view::npos;
+			(*pNewFunction)( NULL, pTable, j, pTable->GetString( j ), pUserData );
 
-			if (bIsModel)
-			{
-				StringTableCallback* data = new StringTableCallback;
-				data->callbackFunc = pNewFunction;
-				data->object = NULL;
-				data->stringTable = pTable;
-				data->stringNumber = j;
-				data->newString = pTable->GetString( j );
-				data->newData = pUserData;
-				data->tableName = pTableName;
-
-				entries.AddToTail(data);
-			} else {
-				(*pNewFunction)( NULL, pTable, j, pTable->GetString( j ), pUserData );
-			}
+			RunVGUIFrame();
+			if (ShouldCancelLoading())
+				return;
 		}
-
-		ParallelProcess("Threaded_StringTableCallback", entries.Base(), entries.Count(), Threaded_StringTableCallback);
 	}
 }
 
